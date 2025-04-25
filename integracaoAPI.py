@@ -1,4 +1,4 @@
-import requests
+import requests 
 import pymysql
 import time
 from sqlalchemy import create_engine, text
@@ -52,6 +52,7 @@ def consultar_cnpj(cnpj):
             "abertura": formatar_data(dados.get("abertura")),
             "situacao": dados.get("situacao"),
             "tipo": dados.get("tipo"),
+            "porte": dados.get("porte"),
             "telefone": dados.get("telefone"),
             "email": dados.get("email"),
             "logradouro": dados.get("logradouro"),
@@ -59,23 +60,32 @@ def consultar_cnpj(cnpj):
             "bairro": dados.get("bairro"),
             "municipio": dados.get("municipio"),
             "uf": dados.get("uf"),
-            "cep": dados.get("cep")
+            "cep": dados.get("cep"),
+            "cnae_principal": dados.get("atividade_principal", [{}])[0].get("code"),
+            "cnae_principal_desc": dados.get("atividade_principal", [{}])[0].get("text"),
+            "cnaes_secundarios": "; ".join(
+                [f"{a.get('code')} - {a.get('text')}" for a in dados.get("atividades_secundarias", [])]
+            ),
+            "socios": "; ".join(
+                [s.get("nome", "") for s in dados.get("qsa", [])]
+            )
         }
     except Exception as e:
         print(f"[{cnpj}] Erro na requisição: {e}")
         return None
 
-# Criação da tabela
+# Criação da tabela com nome "CNAE"
 def create_table_for_all_cnpjs(engine):
     with engine.connect() as conn:
         conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS cnpj_info (
+            CREATE TABLE IF NOT EXISTS CNAE (
                 cnpj VARCHAR(20) PRIMARY KEY,
                 razao_social VARCHAR(255),
                 nome_fantasia VARCHAR(255),
                 abertura DATE,
                 situacao VARCHAR(50),
                 tipo VARCHAR(50),
+                porte VARCHAR(50),
                 telefone VARCHAR(20),
                 email VARCHAR(100),
                 logradouro VARCHAR(255),
@@ -83,22 +93,28 @@ def create_table_for_all_cnpjs(engine):
                 bairro VARCHAR(100),
                 municipio VARCHAR(100),
                 uf VARCHAR(2),
-                cep VARCHAR(8)
+                cep VARCHAR(8),
+                cnae_principal VARCHAR(20),
+                cnae_principal_desc VARCHAR(255),
+                cnaes_secundarios TEXT,
+                socios TEXT
             )
         """))
-    print("Tabela cnpj_info criada ou já existente.")
+    print("Tabela CNAE criada ou já existente.")
 
 # Insere dados com segurança contra duplicatas
 def insert_cnpj_data(engine, data):
     try:
         with engine.begin() as conn:
             query = text("""
-                INSERT IGNORE INTO cnpj_info (
+                INSERT IGNORE INTO CNAE (
                     cnpj, razao_social, nome_fantasia, abertura, situacao,
-                    tipo, telefone, email, logradouro, numero, bairro, municipio, uf, cep
+                    tipo, porte, telefone, email, logradouro, numero, bairro, municipio, uf, cep,
+                    cnae_principal, cnae_principal_desc, cnaes_secundarios, socios
                 ) VALUES (
                     :cnpj, :razao_social, :nome_fantasia, :abertura, :situacao,
-                    :tipo, :telefone, :email, :logradouro, :numero, :bairro, :municipio, :uf, :cep
+                    :tipo, :porte, :telefone, :email, :logradouro, :numero, :bairro, :municipio, :uf, :cep,
+                    :cnae_principal, :cnae_principal_desc, :cnaes_secundarios, :socios
                 )
             """)
             conn.execute(query, data)
@@ -117,6 +133,7 @@ def process_cnpjs(df_cnpjs, engine):
             insert_cnpj_data(engine, dados)
         else:
             print(f"[{cnpj}] Falha ao consultar ou inserir.")
-        time.sleep(20)  # Aguarda 20s por CNPJ
+        time.sleep(20)  # Aguarda 20s por CNPJ para respeitar o limite da API
+
 # Inicia o processamento
 process_cnpjs(df_cnpjs, engine)
