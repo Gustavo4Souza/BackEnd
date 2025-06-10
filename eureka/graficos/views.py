@@ -1,18 +1,61 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
+from .models import Empresa
 
-def home(request):
-    return JsonResponse({"mensagem": "API de gráficos está no ar!"})
+def api_empresas(request):
+    empresas = Empresa.objects.all()
 
-def grafico_faturamento(request):
+    dados = []
+    for empresa in empresas:
+        dados.append({
+            'cnpj': empresa.cnpj,
+            'razao_social': empresa.razao_social,
+            'nome_fantasia': empresa.nome_fantasia,
+            'abertura': empresa.abertura,
+            'situacao': empresa.situacao,
+            'tipo': empresa.tipo,
+            'porte': empresa.porte,
+            'telefone': empresa.telefone,
+            'email': empresa.email,
+            'logradouro': empresa.logradouro,
+            'numero': empresa.numero,
+            'bairro': empresa.bairro,
+            'municipio': empresa.municipio,
+            'uf': empresa.uf,
+            'cep': empresa.cep,
+            'cnae_principal': empresa.cnae_principal,
+            'cnae_principal_desc': empresa.cnae_principal_desc,
+            'cnaes_secundarios': empresa.cnaes_secundarios,
+            'socios': empresa.socios,
+        })
+
+    return JsonResponse(dados, safe=False)
+
+def api_detalhes_empresa(request, cnpj):
+    try:
+        empresa = Empresa.objects.get(cnpj=cnpj)
+    except Empresa.DoesNotExist:
+        raise Http404("Empresa não encontrada")
+
     dados = {
-        "labels": ["Jan", "Fev", "Mar"],
-        "data": [10000, 15000, 12000]
+        'cnpj': empresa.cnpj,
+        'razao_social': empresa.razao_social,
+        'nome_fantasia': empresa.nome_fantasia,
+        'abertura': empresa.abertura,
+        'situacao': empresa.situacao,
+        'tipo': empresa.tipo,
+        'porte': empresa.porte,
+        'telefone': empresa.telefone,
+        'email': empresa.email,
+        'logradouro': empresa.logradouro,
+        'numero': empresa.numero,
+        'bairro': empresa.bairro,
+        'municipio': empresa.municipio,
+        'uf': empresa.uf,
+        'cep': empresa.cep,
+        'cnae_principal': empresa.cnae_principal,
+        'cnae_principal_desc': empresa.cnae_principal_desc,
+        'cnaes_secundarios': empresa.cnaes_secundarios,
+        'socios': empresa.socios,
     }
-    return JsonResponse(dados)
 
-def grafico_clientes(request):
-    dados = {
-        "labels": ["SP", "RJ", "MG"],
-        "data": [40, 25, 35]
-    }
     return JsonResponse(dados)
