@@ -1,1 +1,0 @@
-SELECT * FROM cnpj_ja.cnpj_info;
