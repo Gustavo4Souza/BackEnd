@@ -75,15 +75,10 @@ WSGI_APPLICATION = 'eureka.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'cnpj_ja',        # Nome do seu banco no MySQL
-        'USER': 'root',              # Ex: root
-        'PASSWORD': 'root',
-        'HOST': 'localhost',
-        'PORT': '3306',                     # Porta padrão do MySQL
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR.parent / 'banco_de_dados' / 'cnpj_ja_cnae.db',
     }
 }
-
 
 
 # Password validation
